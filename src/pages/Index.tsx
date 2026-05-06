@@ -36,6 +36,8 @@ const Index = () => {
   const [image, setImage] = useState<string | null>(null);
   const [style, setStyle] = useState<StyleKey | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<ItemSuggestion[] | null>(null);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "image/*": [] },
