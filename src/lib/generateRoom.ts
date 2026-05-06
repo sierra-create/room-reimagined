@@ -11,7 +11,6 @@ export async function generateRevampedRoom(
   });
 
   if (error) {
-    // Surface friendly server-provided message when present
     const ctx = (error as any).context;
     if (ctx?.body) {
       try {
@@ -24,4 +23,32 @@ export async function generateRevampedRoom(
 
   if (!data?.image) throw new Error("No image returned");
   return data.image as string;
+}
+
+export interface ItemSuggestion {
+  name: string;
+  reason: string;
+  price_range: string;
+}
+
+export async function suggestItems(
+  inputImage: string,
+  style: StyleKey
+): Promise<ItemSuggestion[]> {
+  const { data, error } = await supabase.functions.invoke("suggest-items", {
+    body: { image: inputImage, style },
+  });
+
+  if (error) {
+    const ctx = (error as any).context;
+    if (ctx?.body) {
+      try {
+        const parsed = typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body;
+        if (parsed?.error) throw new Error(parsed.error);
+      } catch (_) { /* fall through */ }
+    }
+    throw new Error(error.message || "Failed to fetch suggestions");
+  }
+
+  return (data?.suggestions ?? []) as ItemSuggestion[];
 }
