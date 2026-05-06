@@ -51,8 +51,9 @@ const Index = () => {
       const out = await generateRevampedRoom(image, chosen);
       setResult(out);
       setStep("results");
-    } catch {
-      toast({ title: "Something went wrong", description: "Please try again." });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Please try again.";
+      toast({ title: "Couldn't reorganize your room", description: msg });
       setStep("style");
     }
   };

@@ -1,16 +1,27 @@
-// TODO: Replace with Gemini API call
-// This is a stub for the AI room reorganization. Swap the body of `generateRevampedRoom`
-// with a real call to Google's Gemini image generation API when the key is available.
-// Expected: take an input image (data URL) + style key, return a generated image data URL.
+import { supabase } from "@/integrations/supabase/client";
 
 export type StyleKey = "minimalist" | "cozy" | "modern" | "bohemian";
 
 export async function generateRevampedRoom(
   inputImage: string,
-  _style: StyleKey
+  style: StyleKey
 ): Promise<string> {
-  // Simulate processing latency
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-  // For now, just echo the original image back.
-  return inputImage;
+  const { data, error } = await supabase.functions.invoke("reorganize-room", {
+    body: { image: inputImage, style },
+  });
+
+  if (error) {
+    // Surface friendly server-provided message when present
+    const ctx = (error as any).context;
+    if (ctx?.body) {
+      try {
+        const parsed = typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body;
+        if (parsed?.error) throw new Error(parsed.error);
+      } catch (_) { /* fall through */ }
+    }
+    throw new Error(error.message || "Failed to reorganize room");
+  }
+
+  if (!data?.image) throw new Error("No image returned");
+  return data.image as string;
 }
