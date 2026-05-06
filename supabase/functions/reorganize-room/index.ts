@@ -41,10 +41,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const prompt = `Reorganize and redesign THIS exact room into a beautifully arranged ${stylePrompt}. 
-Keep the same room (same walls, windows, doors, floor, perspective and overall architecture). 
-Rearrange and restyle the furniture and decor so it looks tidy, intentional, and like an interior-design magazine photo. 
-Remove clutter. Output a single photorealistic image of the rearranged room from the same camera angle.`;
+    const prompt = `You are an expert interior organizer. Reorganize and rearrange THIS exact room using ONLY the items already visible in the photo, inspired by a ${stylePrompt} aesthetic.
+
+STRICT RULES:
+- Do NOT add any new furniture, decor, plants, rugs, art, or objects that are not already present in the original photo.
+- Do NOT remove existing furniture or belongings. The only things you may remove are trash, obvious clutter (loose papers, wrappers, dirty laundry on floor) and dust.
+- Keep the SAME room: same walls, paint, windows, doors, flooring, ceiling, lighting fixtures and camera perspective.
+- Rearrange, tidy, fold, stack, and reposition the existing items so the space feels intentional, organized, and styled in the spirit of the chosen vibe.
+- Preserve the identity of each existing object (same colors, materials, shapes) — just place them more thoughtfully.
+
+Output a single photorealistic image of the SAME room reorganized from the SAME camera angle.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
