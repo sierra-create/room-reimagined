@@ -54,6 +54,7 @@ const Index = () => {
   const runGeneration = async (chosen: StyleKey) => {
     if (!image) return;
     setStyle(chosen);
+    setSuggestions(null);
     setStep("loading");
     try {
       const out = await generateRevampedRoom(image, chosen);
