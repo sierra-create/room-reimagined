@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
-import { generateRevampedRoom, type StyleKey } from "@/lib/generateRoom";
+import {
+  generateRevampedRoom,
+  suggestItems,
+  type StyleKey,
+  type ItemSuggestion,
+} from "@/lib/generateRoom";
 import { toast } from "@/hooks/use-toast";
 import minimalistImg from "@/assets/style-minimalist.jpg";
 import cozyImg from "@/assets/style-cozy.jpg";
