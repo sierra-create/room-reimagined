@@ -221,10 +221,72 @@ const Index = () => {
           <section className="max-w-2xl w-full space-y-6 animate-in fade-in duration-500">
             <div className="text-center space-y-2">
               <h2 className="text-3xl font-bold tracking-tight">Voilà ✨</h2>
-              <p className="text-muted-foreground">Drag the slider to compare</p>
+              <p className="text-muted-foreground">Same stuff, smarter layout.</p>
             </div>
 
-            <BeforeAfterSlider before={image} after={result} />
+            <Tabs defaultValue="reimagined" className="w-full">
+              <TabsList className="grid grid-cols-2 w-full rounded-full h-12 p-1">
+                <TabsTrigger value="reimagined" className="rounded-full h-10">
+                  Reimagined
+                </TabsTrigger>
+                <TabsTrigger value="suggestions" className="rounded-full h-10">
+                  See my suggestions
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="reimagined" className="space-y-4 mt-4">
+                <BeforeAfterSlider before={image} after={result} />
+                <p className="text-xs text-center text-muted-foreground">
+                  Reorganized using only items already in your photo — drag to compare.
+                </p>
+              </TabsContent>
+
+              <TabsContent value="suggestions" className="mt-4">
+                <div className="bg-card rounded-3xl border border-border shadow-card p-5 space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-lg">New items that would fit</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Pieces (not already in your room) to lean further into your {style} vibe.
+                    </p>
+                  </div>
+
+                  {loadingSuggestions && (
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground py-6 justify-center">
+                      <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                      Curating ideas for your space...
+                    </div>
+                  )}
+
+                  {!loadingSuggestions && suggestions && suggestions.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">
+                      No suggestions right now. Try again in a moment.
+                    </p>
+                  )}
+
+                  {!loadingSuggestions && suggestions && suggestions.length > 0 && (
+                    <ul className="space-y-3">
+                      {suggestions.map((s, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-3 p-3 rounded-2xl bg-primary-soft/40 border border-border"
+                        >
+                          <div className="w-8 h-8 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                            {i + 1}
+                          </div>
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <h4 className="font-semibold text-sm sm:text-base">{s.name}</h4>
+                              <span className="text-xs font-medium text-primary">{s.price_range}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground leading-snug">{s.reason}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Button variant="secondary" className="rounded-full h-12" onClick={() => setStep("style")}>
