@@ -70,8 +70,23 @@ const Index = () => {
     setImage(null);
     setStyle(null);
     setResult(null);
+    setSuggestions(null);
     setStep("landing");
   };
+
+  // Lazy-load suggestions when results screen appears
+  useEffect(() => {
+    if (step !== "results" || !image || !style || suggestions !== null || loadingSuggestions) return;
+    setLoadingSuggestions(true);
+    suggestItems(image, style)
+      .then(setSuggestions)
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : "Try again later.";
+        toast({ title: "Couldn't load suggestions", description: msg });
+        setSuggestions([]);
+      })
+      .finally(() => setLoadingSuggestions(false));
+  }, [step, image, style, suggestions, loadingSuggestions]);
 
   const saveImage = () => {
     if (!result) return;
