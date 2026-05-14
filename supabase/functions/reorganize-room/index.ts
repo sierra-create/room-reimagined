@@ -41,16 +41,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    const prompt = `You are an expert interior organizer. Reorganize and rearrange THIS exact room using ONLY the items already visible in the photo, inspired by a ${stylePrompt} aesthetic.
+    const prompt = `You are an expert interior organizer. FULLY REGENERATE this exact room as a brand new photorealistic image where the SAME items have been physically MOVED to NEW positions, in a ${stylePrompt} aesthetic.
 
-STRICT RULES:
-- Do NOT add any new furniture, decor, plants, rugs, art, or objects that are not already present in the original photo.
-- Do NOT remove existing furniture or belongings. The only things you may remove are trash, obvious clutter (loose papers, wrappers, dirty laundry on floor) and dust.
-- Keep the SAME room: same walls, paint, windows, doors, flooring, ceiling, lighting fixtures and camera perspective.
-- Rearrange, tidy, fold, stack, and reposition the existing items so the space feels intentional, organized, and styled in the spirit of the chosen vibe.
-- Preserve the identity of each existing object (same colors, materials, shapes) — just place them more thoughtfully.
+THIS IS A REARRANGEMENT TASK — THE OUTPUT MUST LOOK VISIBLY DIFFERENT FROM THE INPUT.
 
-Output a single photorealistic image of the SAME room reorganized from the SAME camera angle.`;
+ABSOLUTE RULES (do not violate any):
+1. DO NOT return the input image. DO NOT return a near-identical copy. Items MUST be in noticeably different physical positions than the original.
+2. DO NOT add ANY new objects: no new furniture, no new decor, no new plants, no new rugs, no new art, no new pillows, no new towels, no new blankets, no new books, NOTHING that wasn't already visible in the original photo. Adding items is a complete failure of the task.
+3. DO NOT remove existing furniture or belongings. You MAY remove only: trash, loose papers, wrappers, dirty laundry on the floor, and visible dust/dirt.
+4. Keep the SAME room shell: same walls, paint, windows, doors, flooring, ceiling, built-in lighting fixtures, and the SAME camera angle / perspective / focal length.
+5. Every visible object from the original must still appear in the output — just MOVED, rotated, stacked, folded, straightened, grouped, or repositioned to feel intentional and styled in the chosen vibe.
+6. Preserve each object's identity: same colors, materials, patterns, and approximate size.
+
+Before outputting, mentally check: "Have I actually moved items to new locations? Did I avoid inventing anything new?" If not, redo it.
+
+Output: ONE photorealistic image of the SAME room from the SAME camera angle, with the SAME items rearranged into a clearly different, more organized layout.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
