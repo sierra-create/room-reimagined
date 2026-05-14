@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
     }
 
     let lastImage: string | null = null;
-    let lastVerdict: Verdict | null = null;
+    let lastVerdict: StrictVerdict | null = null;
     let lastIssue: string | undefined;
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
