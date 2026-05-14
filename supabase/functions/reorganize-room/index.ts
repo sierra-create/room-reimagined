@@ -259,8 +259,34 @@ Deno.serve(async (req) => {
 
       const issues: string[] = [];
       if (verdict.tooSimilar) issues.push("the AFTER looked too similar to the BEFORE");
-      if (verdict.newItems) issues.push("the AFTER introduced items that weren't in the original");
+      if (verdict.newItems) {
+        const added = verdict.addedItems.map((item) => item.name).join(", ");
+        issues.push(`the AFTER introduced items that weren't in the original${added ? ` (${added})` : ""}`);
+      }
       lastIssue = `${issues.join(" and ")}. Auditor note: ${verdict.reason}`;
+    }
+
+    if (lastVerdict?.verificationFailed) {
+      return new Response(
+        JSON.stringify({
+          error: "We couldn't verify that the image used only your original items. Please try again.",
+          verdict: lastVerdict,
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (lastVerdict?.newItems) {
+      const added = lastVerdict.addedItems.map((item) => item.name).filter(Boolean).join(", ");
+      return new Response(
+        JSON.stringify({
+          error: added
+            ? `The generated image added items not found in your photo: ${added}. Please try again with a clearer photo.`
+            : "The generated image added items not found in your photo. Please try again with a clearer photo.",
+          verdict: lastVerdict,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (lastImage) {
