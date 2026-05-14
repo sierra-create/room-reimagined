@@ -58,8 +58,16 @@ const Index = () => {
     setStep("loading");
     try {
       const out = await generateRevampedRoom(image, chosen);
-      setResult(out);
+      setResult(out.image);
       setStep("results");
+      if (out.warning) {
+        toast({ title: "Heads up", description: out.warning });
+      } else if (out.attempts && out.attempts > 1) {
+        toast({
+          title: "Refined for you",
+          description: `Took ${out.attempts} tries to get a real rearrangement.`,
+        });
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Please try again.";
       toast({ title: "Couldn't reorganize your room", description: msg });
