@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `This room should feel ${styleDesc}. Suggest 5 new items the user could add (things NOT already in the photo) to better achieve this vibe. For each item include: a short name, a one-sentence reason it fits this room and style, and a rough price range in USD (e.g. "$30–80").`,
+                text: `This room should feel ${styleDesc}. Suggest 5 new items the user could add (things NOT already in the photo) to better achieve this vibe. For each item include: a short product name, a one-sentence reason it fits this room and style, a rough price range in USD (e.g. "$30–80"), and a short search_query (3–6 words) someone could type into a shopping site to find it (e.g. "woven jute area rug 5x7").`,
               },
               { type: "image_url", image_url: { url: image } },
             ],
@@ -78,8 +78,9 @@ Deno.serve(async (req) => {
                         name: { type: "string" },
                         reason: { type: "string" },
                         price_range: { type: "string" },
+                        search_query: { type: "string" },
                       },
-                      required: ["name", "reason", "price_range"],
+                      required: ["name", "reason", "price_range", "search_query"],
                       additionalProperties: false,
                     },
                   },
