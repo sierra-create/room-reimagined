@@ -29,6 +29,7 @@ export interface ItemSuggestion {
   name: string;
   reason: string;
   price_range: string;
+  search_query?: string;
 }
 
 export async function suggestItems(
