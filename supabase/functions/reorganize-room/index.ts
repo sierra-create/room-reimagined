@@ -78,23 +78,52 @@ async function generateImage(apiKey: string, prompt: string, image: string): Pro
 
 type Verdict = { ok: boolean; reason: string; tooSimilar: boolean; newItems: boolean };
 
-async function verifyResult(apiKey: string, before: string, after: string): Promise<Verdict> {
-  const verifierPrompt = `You are a strict QA auditor for a room-rearrangement AI. Compare the two photos:
+type AddedItem = {
+  name: string;
+  evidence: string;
+  confidence: "high" | "medium" | "low";
+};
+
+type StrictVerdict = Verdict & {
+  addedItems: AddedItem[];
+  verificationFailed?: boolean;
+};
+
+function normalizeAddedItems(value: unknown): AddedItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => ({
+      name: typeof item?.name === "string" ? item.name.trim() : "new item",
+      evidence: typeof item?.evidence === "string" ? item.evidence.trim() : "Visible in AFTER but not BEFORE.",
+      confidence: ["high", "medium", "low"].includes(item?.confidence) ? item.confidence : "medium",
+    }))
+    .filter((item) => item.name.length > 0);
+}
+
+async function verifyResult(apiKey: string, before: string, after: string): Promise<StrictVerdict> {
+  const verifierPrompt = `You are a strict image-diff QA auditor for a room-rearrangement AI. Compare the two photos:
 - BEFORE: the user's original room.
 - AFTER: the AI's rearranged version.
 
 Two failure conditions:
 A) "too_similar" — items are in essentially the same positions; the AFTER looks like the BEFORE with only trivial changes (e.g. only lighting/cleanup, no actual rearrangement).
-B) "new_items" — the AFTER contains an object class that was NOT visible in the BEFORE (e.g. a stack of towels, a plant, a rug, a piece of art, pillows, books). Removing trash/clutter is fine. Slight inference of partially-occluded items is fine.
+B) "new_items" — the AFTER contains any tangible object that was NOT visible in the BEFORE.
+
+For "new_items", run an object-presence diff, not a style critique:
+- Flag added furniture, decor, textiles, towels, blankets, pillows, books, plants, rugs, lamps, baskets, art, electronics, containers, storage bins, and stacks/piles of objects.
+- Flag a newly visible object even if it is common in rooms or would match the requested style.
+- Do NOT flag objects that clearly existed in BEFORE but were moved, rotated, folded, stacked, straightened, or partially occluded.
+- Do NOT flag lighting changes, shadows, camera exposure, cleaner surfaces, removed trash, or reduced clutter.
+- If uncertain, only mark confidence "low" and do not set "new_items" true unless at least one added item has medium or high confidence.
 
 Respond with ONLY a compact JSON object, no prose, no markdown:
-{"too_similar": boolean, "new_items": boolean, "reason": "<one short sentence>"}`;
+{"too_similar": boolean, "new_items": boolean, "added_items": [{"name": "<object>", "evidence": "<why it was not in BEFORE>", "confidence": "high|medium|low"}], "reason": "<one short sentence>"}`;
 
   const res = await fetch(AI_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-2.5-pro",
       messages: [
         {
           role: "user",
@@ -107,30 +136,56 @@ Respond with ONLY a compact JSON object, no prose, no markdown:
           ],
         },
       ],
+      response_format: { type: "json_object" },
     }),
   });
 
   if (!res.ok) {
-    // If verifier fails, don't block — accept the image.
     console.warn("verifier failed", res.status, await res.text());
-    return { ok: true, reason: "verifier unavailable", tooSimilar: false, newItems: false };
+    return {
+      ok: false,
+      reason: "Verifier unavailable; refusing to return an unchecked image.",
+      tooSimilar: false,
+      newItems: false,
+      addedItems: [],
+      verificationFailed: true,
+    };
   }
   const data = await res.json();
   const raw: string = data?.choices?.[0]?.message?.content ?? "";
   const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) return { ok: true, reason: "no verdict json", tooSimilar: false, newItems: false };
+  if (!match) {
+    return {
+      ok: false,
+      reason: "Verifier did not return a readable verdict; refusing to return an unchecked image.",
+      tooSimilar: false,
+      newItems: false,
+      addedItems: [],
+      verificationFailed: true,
+    };
+  }
   try {
     const parsed = JSON.parse(match[0]);
     const tooSimilar = !!parsed.too_similar;
-    const newItems = !!parsed.new_items;
+    const addedItems = normalizeAddedItems(parsed.added_items);
+    const hasConfidentAddedItem = addedItems.some((item) => item.confidence !== "low");
+    const newItems = !!parsed.new_items && hasConfidentAddedItem;
     return {
       ok: !tooSimilar && !newItems,
       reason: parsed.reason ?? "",
       tooSimilar,
       newItems,
+      addedItems,
     };
   } catch {
-    return { ok: true, reason: "verdict parse failed", tooSimilar: false, newItems: false };
+    return {
+      ok: false,
+      reason: "Verifier verdict could not be parsed; refusing to return an unchecked image.",
+      tooSimilar: false,
+      newItems: false,
+      addedItems: [],
+      verificationFailed: true,
+    };
   }
 }
 
