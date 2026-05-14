@@ -265,23 +265,46 @@ const Index = () => {
 
                   {!loadingSuggestions && suggestions && suggestions.length > 0 && (
                     <ul className="space-y-3">
-                      {suggestions.map((s, i) => (
-                        <li
-                          key={i}
-                          className="flex gap-3 p-3 rounded-2xl bg-primary-soft/40 border border-border"
-                        >
-                          <div className="w-8 h-8 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                            {i + 1}
-                          </div>
-                          <div className="space-y-1 min-w-0">
-                            <div className="flex items-baseline gap-2 flex-wrap">
-                              <h4 className="font-semibold text-sm sm:text-base">{s.name}</h4>
-                              <span className="text-xs font-medium text-primary">{s.price_range}</span>
+                      {suggestions.map((s, i) => {
+                        const query = encodeURIComponent(s.search_query || s.name);
+                        const amazonUrl = `https://www.amazon.com/s?k=${query}`;
+                        const googleUrl = `https://www.google.com/search?tbm=shop&q=${query}`;
+                        return (
+                          <li
+                            key={i}
+                            className="flex gap-3 p-3 rounded-2xl bg-primary-soft/40 border border-border"
+                          >
+                            <div className="w-8 h-8 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                              {i + 1}
                             </div>
-                            <p className="text-sm text-muted-foreground leading-snug">{s.reason}</p>
-                          </div>
-                        </li>
-                      ))}
+                            <div className="space-y-2 min-w-0 flex-1">
+                              <div className="flex items-baseline gap-2 flex-wrap">
+                                <h4 className="font-semibold text-sm sm:text-base">{s.name}</h4>
+                                <span className="text-xs font-medium text-primary">{s.price_range}</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground leading-snug">{s.reason}</p>
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                <a
+                                  href={amazonUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                                >
+                                  Shop on Amazon →
+                                </a>
+                                <a
+                                  href={googleUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-background border border-border hover:bg-muted transition-colors"
+                                >
+                                  Google Shopping →
+                                </a>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
