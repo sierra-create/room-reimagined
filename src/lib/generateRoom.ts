@@ -8,6 +8,38 @@ export interface GenerateResult {
   warning?: string;
 }
 
+async function getFunctionErrorMessage(error: unknown): Promise<string | null> {
+  const ctx = (error as any)?.context;
+  if (!ctx) return null;
+
+  if (typeof ctx?.json === "function") {
+    try {
+      const response = typeof ctx.clone === "function" ? ctx.clone() : ctx;
+      const parsed = await response.json();
+      return typeof parsed?.error === "string" ? parsed.error : null;
+    } catch {
+      try {
+        const response = typeof ctx.clone === "function" ? ctx.clone() : ctx;
+        const text = await response.text();
+        const parsed = JSON.parse(text);
+        return typeof parsed?.error === "string" ? parsed.error : null;
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  const body = ctx?.body;
+  if (!body) return null;
+
+  try {
+    const parsed = typeof body === "string" ? JSON.parse(body) : body;
+    return typeof parsed?.error === "string" ? parsed.error : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateRevampedRoom(
   inputImage: string,
   style: StyleKey
@@ -17,13 +49,8 @@ export async function generateRevampedRoom(
   });
 
   if (error) {
-    const ctx = (error as any).context;
-    if (ctx?.body) {
-      try {
-        const parsed = typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body;
-        if (parsed?.error) throw new Error(parsed.error);
-      } catch (_) { /* fall through */ }
-    }
+    const message = await getFunctionErrorMessage(error);
+    if (message) throw new Error(message);
     throw new Error(error.message || "Failed to reorganize room");
   }
 
@@ -47,13 +74,8 @@ export async function suggestItems(
   });
 
   if (error) {
-    const ctx = (error as any).context;
-    if (ctx?.body) {
-      try {
-        const parsed = typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body;
-        if (parsed?.error) throw new Error(parsed.error);
-      } catch (_) { /* fall through */ }
-    }
+    const message = await getFunctionErrorMessage(error);
+    if (message) throw new Error(message);
     throw new Error(error.message || "Failed to fetch suggestions");
   }
 
