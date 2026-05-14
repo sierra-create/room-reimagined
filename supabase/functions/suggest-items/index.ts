@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
     const data = await aiResponse.json();
     const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
     const argsStr = toolCall?.function?.arguments;
-    let suggestions: Array<{ name: string; reason: string; price_range: string }> = [];
+    let suggestions: Array<{ name: string; reason: string; price_range: string; search_query?: string }> = [];
     try {
       const parsed = typeof argsStr === "string" ? JSON.parse(argsStr) : argsStr;
       suggestions = parsed?.suggestions ?? [];
