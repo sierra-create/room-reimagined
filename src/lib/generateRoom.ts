@@ -8,8 +8,27 @@ export interface GenerateResult {
   warning?: string;
 }
 
-function getFunctionErrorMessage(error: unknown): string | null {
+async function getFunctionErrorMessage(error: unknown): Promise<string | null> {
   const ctx = (error as any)?.context;
+  if (!ctx) return null;
+
+  if (typeof ctx?.json === "function") {
+    try {
+      const response = typeof ctx.clone === "function" ? ctx.clone() : ctx;
+      const parsed = await response.json();
+      return typeof parsed?.error === "string" ? parsed.error : null;
+    } catch {
+      try {
+        const response = typeof ctx.clone === "function" ? ctx.clone() : ctx;
+        const text = await response.text();
+        const parsed = JSON.parse(text);
+        return typeof parsed?.error === "string" ? parsed.error : null;
+      } catch {
+        return null;
+      }
+    }
+  }
+
   const body = ctx?.body;
   if (!body) return null;
 
@@ -30,7 +49,7 @@ export async function generateRevampedRoom(
   });
 
   if (error) {
-    const message = getFunctionErrorMessage(error);
+    const message = await getFunctionErrorMessage(error);
     if (message) throw new Error(message);
     throw new Error(error.message || "Failed to reorganize room");
   }
@@ -55,7 +74,7 @@ export async function suggestItems(
   });
 
   if (error) {
-    const message = getFunctionErrorMessage(error);
+    const message = await getFunctionErrorMessage(error);
     if (message) throw new Error(message);
     throw new Error(error.message || "Failed to fetch suggestions");
   }
