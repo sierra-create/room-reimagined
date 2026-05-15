@@ -13,9 +13,31 @@ import {
   type ProductSuggestion,
 } from "@/lib/generateRoom";
 import { toast } from "@/hooks/use-toast";
-import { Camera, Sparkles, ArrowLeft, Download, RotateCcw, LayoutGrid, ShoppingBag, ChartBar as BarChart3, Loader as Loader2 } from "lucide-react";
+import { Camera, Sparkles, ArrowLeft, Download, RotateCcw, LayoutGrid, ShoppingBag, ChartBar as BarChart3, Loader as Loader2, CircleAlert as AlertCircle } from "lucide-react";
 
-type Step = "landing" | "upload" | "analyzing" | "results";
+type Step = "landing" | "upload" | "analyzing" | "results" | "error";
+type ErrorContext = "analyze" | "rearrange";
+type AppError = { context: ErrorContext; message: string };
+
+function friendlyError(raw: string): string {
+  const m = (raw || "").toLowerCase();
+  if (m.includes("payload") || m.includes("too large") || m.includes("body size") || m.includes("413")) {
+    return "Your photo is too large to send. Try a smaller or lower-resolution image.";
+  }
+  if (m.includes("rate limit") || m.includes("429")) {
+    return "We're being rate-limited right now. Please wait a moment and try again.";
+  }
+  if (m.includes("credits")) {
+    return "AI credits have run out. Please try again later.";
+  }
+  if (m.includes("failed to fetch") || m.includes("network")) {
+    return "Couldn't reach the server. Check your connection and try again.";
+  }
+  if (m.includes("timeout") || m.includes("timed out")) {
+    return "The request took too long. Please try again.";
+  }
+  return raw || "Something went wrong. Please try again.";
+}
 
 const Header = () => (
   <header className="w-full px-6 py-4 flex items-center gap-2.5">
@@ -35,6 +57,7 @@ const Index = () => {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingRearrange, setLoadingRearrange] = useState(false);
   const [activeTab, setActiveTab] = useState("analysis");
+  const [error, setError] = useState<AppError | null>(null);
 
   const processFile = async (file: File): Promise<string> => {
     let working: Blob = file;
@@ -96,6 +119,7 @@ const Index = () => {
     setAnalysis(null);
     setRearrangedImage(null);
     setProducts(null);
+    setError(null);
 
     try {
       const result = await analyzeSpace(img);
@@ -103,14 +127,15 @@ const Index = () => {
       setStep("results");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Please try again.";
-      toast({ title: "Analysis failed", description: msg });
-      setStep("upload");
+      setError({ context: "analyze", message: friendlyError(msg) });
+      setStep("error");
     }
   }, []);
 
   const runRearrange = useCallback(async () => {
     if (!image) return;
     setLoadingRearrange(true);
+    setError(null);
     try {
       const result = await rearrangeSpace(image);
       setRearrangedImage(result.image);
@@ -119,7 +144,8 @@ const Index = () => {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Please try again.";
-      toast({ title: "Rearrangement failed", description: msg });
+      setError({ context: "rearrange", message: friendlyError(msg) });
+      setStep("error");
     } finally {
       setLoadingRearrange(false);
     }
@@ -268,6 +294,54 @@ const Index = () => {
               >
                 <Sparkles className="w-4 h-4" />
                 Analyze My Space
+              </Button>
+            </div>
+          </section>
+        )}
+
+        {/* ERROR */}
+        {step === "error" && error && (
+          <section className="max-w-md w-full text-center space-y-6 animate-in fade-in duration-500">
+            <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight">
+                {error.context === "analyze" ? "Couldn't analyze your space" : "Couldn't rearrange your space"}
+              </h2>
+              <p className="text-muted-foreground">{error.message}</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                variant="ghost"
+                className="rounded-full h-12"
+                onClick={() => {
+                  setError(null);
+                  setStep("upload");
+                }}
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Upload a different photo
+              </Button>
+              <Button
+                className="rounded-full h-12 gap-2"
+                onClick={async () => {
+                  if (!image) {
+                    setError(null);
+                    setStep("upload");
+                    return;
+                  }
+                  setError(null);
+                  if (error.context === "analyze") {
+                    await runAnalysis(image);
+                  } else {
+                    setStep("results");
+                    await runRearrange();
+                  }
+                }}
+              >
+                <RotateCcw className="w-4 h-4" />
+                Try again
               </Button>
             </div>
           </section>
