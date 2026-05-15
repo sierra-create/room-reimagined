@@ -299,6 +299,54 @@ const Index = () => {
           </section>
         )}
 
+        {/* ERROR */}
+        {step === "error" && error && (
+          <section className="max-w-md w-full text-center space-y-6 animate-in fade-in duration-500">
+            <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight">
+                {error.context === "analyze" ? "Couldn't analyze your space" : "Couldn't rearrange your space"}
+              </h2>
+              <p className="text-muted-foreground">{error.message}</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                variant="ghost"
+                className="rounded-full h-12"
+                onClick={() => {
+                  setError(null);
+                  setStep("upload");
+                }}
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Upload a different photo
+              </Button>
+              <Button
+                className="rounded-full h-12 gap-2"
+                onClick={async () => {
+                  if (!image) {
+                    setError(null);
+                    setStep("upload");
+                    return;
+                  }
+                  setError(null);
+                  if (error.context === "analyze") {
+                    await runAnalysis(image);
+                  } else {
+                    setStep("results");
+                    await runRearrange();
+                  }
+                }}
+              >
+                <RotateCcw className="w-4 h-4" />
+                Try again
+              </Button>
+            </div>
+          </section>
+        )}
+
         {/* ANALYZING */}
         {step === "analyzing" && (
           <section className="text-center space-y-8 animate-in fade-in duration-500">
