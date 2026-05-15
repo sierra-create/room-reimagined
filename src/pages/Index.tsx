@@ -336,6 +336,7 @@ const Index = () => {
                     await runAnalysis(image);
                   } else {
                     setStep("results");
+                    setActiveTab("rearrange");
                     await runRearrange();
                   }
                 }}
