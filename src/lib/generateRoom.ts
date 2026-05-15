@@ -1,11 +1,30 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type StyleKey = "minimalist" | "cozy" | "modern" | "bohemian";
+export interface SpaceAnalysis {
+  room_type: string;
+  clutter_score: number;
+  organization_score: number;
+  main_issues: string[];
+  strengths: string[];
+  quick_wins: string[];
+  rearrangement_ideas: string[];
+  storage_needs: string[];
+  estimated_time: string;
+}
 
-export interface GenerateResult {
+export interface RearrangeResult {
   image: string;
   attempts?: number;
   warning?: string;
+}
+
+export interface ProductSuggestion {
+  name: string;
+  reason: string;
+  category: string;
+  price_range: string;
+  search_query: string;
+  priority: number;
 }
 
 async function getFunctionErrorMessage(error: unknown): Promise<string | null> {
@@ -40,44 +59,53 @@ async function getFunctionErrorMessage(error: unknown): Promise<string | null> {
   }
 }
 
-export async function generateRevampedRoom(
-  inputImage: string,
-  style: StyleKey
-): Promise<GenerateResult> {
-  const { data, error } = await supabase.functions.invoke("reorganize-room", {
-    body: { image: inputImage, style },
+export async function analyzeSpace(
+  inputImage: string
+): Promise<SpaceAnalysis> {
+  const { data, error } = await supabase.functions.invoke("analyze-space", {
+    body: { image: inputImage },
   });
 
   if (error) {
     const message = await getFunctionErrorMessage(error);
     if (message) throw new Error(message);
-    throw new Error(error.message || "Failed to reorganize room");
+    throw new Error(error.message || "Failed to analyze space");
+  }
+
+  if (!data?.analysis) throw new Error("No analysis returned");
+  return data.analysis as SpaceAnalysis;
+}
+
+export async function rearrangeSpace(
+  inputImage: string
+): Promise<RearrangeResult> {
+  const { data, error } = await supabase.functions.invoke("rearrange-space", {
+    body: { image: inputImage },
+  });
+
+  if (error) {
+    const message = await getFunctionErrorMessage(error);
+    if (message) throw new Error(message);
+    throw new Error(error.message || "Failed to rearrange space");
   }
 
   if (!data?.image) throw new Error("No image returned");
   return { image: data.image, attempts: data.attempts, warning: data.warning };
 }
 
-export interface ItemSuggestion {
-  name: string;
-  reason: string;
-  price_range: string;
-  search_query?: string;
-}
-
-export async function suggestItems(
+export async function suggestProducts(
   inputImage: string,
-  style: StyleKey
-): Promise<ItemSuggestion[]> {
-  const { data, error } = await supabase.functions.invoke("suggest-items", {
-    body: { image: inputImage, style },
+  analysis?: SpaceAnalysis
+): Promise<ProductSuggestion[]> {
+  const { data, error } = await supabase.functions.invoke("suggest-products", {
+    body: { image: inputImage, analysis: analysis ?? null },
   });
 
   if (error) {
     const message = await getFunctionErrorMessage(error);
     if (message) throw new Error(message);
-    throw new Error(error.message || "Failed to fetch suggestions");
+    throw new Error(error.message || "Failed to fetch product suggestions");
   }
 
-  return (data?.suggestions ?? []) as ItemSuggestion[];
+  return (data?.products ?? []) as ProductSuggestion[];
 }

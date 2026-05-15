@@ -3,9 +3,11 @@ import { useRef, useState } from "react";
 interface BeforeAfterSliderProps {
   before: string;
   after: string;
+  beforeLabel?: string;
+  afterLabel?: string;
 }
 
-export const BeforeAfterSlider = ({ before, after }: BeforeAfterSliderProps) => {
+export const BeforeAfterSlider = ({ before, after, beforeLabel = "Before", afterLabel = "After" }: BeforeAfterSliderProps) => {
   const [pos, setPos] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -21,7 +23,7 @@ export const BeforeAfterSlider = ({ before, after }: BeforeAfterSliderProps) => 
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-square sm:aspect-[4/3] overflow-hidden rounded-3xl shadow-soft select-none touch-none bg-muted"
+      className="relative w-full aspect-square sm:aspect-[4/3] overflow-hidden rounded-xl shadow-soft select-none touch-none bg-muted"
       onMouseDown={(e) => { dragging.current = true; updateFromClientX(e.clientX); }}
       onMouseMove={(e) => dragging.current && updateFromClientX(e.clientX)}
       onMouseUp={() => (dragging.current = false)}
@@ -29,21 +31,21 @@ export const BeforeAfterSlider = ({ before, after }: BeforeAfterSliderProps) => 
       onTouchStart={(e) => updateFromClientX(e.touches[0].clientX)}
       onTouchMove={(e) => updateFromClientX(e.touches[0].clientX)}
     >
-      <img src={after} alt="Reimagined room" className="absolute inset-0 w-full h-full object-cover" />
+      <img src={after} alt={afterLabel} className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
         <img
           src={before}
-          alt="Original room"
+          alt={beforeLabel}
           className="absolute inset-0 h-full object-cover"
           style={{ width: containerRef.current?.clientWidth ?? "100%", maxWidth: "none" }}
         />
       </div>
 
       <span className="absolute top-3 left-3 text-xs font-semibold uppercase tracking-wide bg-background/90 text-foreground rounded-full px-3 py-1">
-        Before
+        {beforeLabel}
       </span>
       <span className="absolute top-3 right-3 text-xs font-semibold uppercase tracking-wide bg-primary text-primary-foreground rounded-full px-3 py-1">
-        After
+        {afterLabel}
       </span>
 
       <div

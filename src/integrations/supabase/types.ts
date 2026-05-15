@@ -7,14 +7,90 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      spaces: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          room_type: string
+          original_image_url: string
+          rearranged_image_url: string | null
+          analysis: Json | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name?: string
+          room_type?: string
+          original_image_url: string
+          rearranged_image_url?: string | null
+          analysis?: Json | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          room_type?: string
+          original_image_url?: string
+          rearranged_image_url?: string | null
+          analysis?: Json | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      suggestions: {
+        Row: {
+          id: string
+          space_id: string
+          category: string
+          title: string
+          description: string
+          priority: number
+          product_url: string | null
+          price_range: string | null
+          search_query: string | null
+          image_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          space_id: string
+          category?: string
+          title?: string
+          description?: string
+          priority?: number
+          product_url?: string | null
+          price_range?: string | null
+          search_query?: string | null
+          image_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          space_id?: string
+          category?: string
+          title?: string
+          description?: string
+          priority?: number
+          product_url?: string | null
+          price_range?: string | null
+          search_query?: string | null
+          image_url?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

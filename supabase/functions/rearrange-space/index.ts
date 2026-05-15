@@ -1,46 +1,32 @@
-// Edge function: reorganize-room
-// Takes a room photo + style key, asks Lovable AI (Nano Banana) to generate a
-// reimagined version of the same room rearranged in that style.
-// Includes an automatic retry loop: after generating, a verifier model compares
-// before/after. If the result looks too similar OR introduces new items, we
-// regenerate (up to MAX_ATTEMPTS) with stronger guidance.
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const STYLE_PROMPTS: Record<string, string> = {
-  minimalist:
-    "minimalist style: clean and uncluttered, neutral palette (whites, warm beiges, light woods), open negative space, only essential furniture neatly arranged, soft natural light",
-  cozy:
-    "cozy style: warm layered textiles, chunky throws and pillows, warm ambient lighting, soft rugs, books and candles, inviting and lived-in but tidy arrangement",
-  modern:
-    "modern style: sleek geometric furniture, bold accent colors, clean lines, contemporary lighting fixtures, marble or matte black accents, polished and intentional layout",
-  bohemian:
-    "bohemian style: eclectic mix of patterns, lots of plants, macrame and woven textures, vintage rugs, warm earthy and vibrant tones, layered but harmonious arrangement",
-};
-
-const MAX_ATTEMPTS = 3;
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const MAX_ATTEMPTS = 3;
 
-function buildPrompt(stylePrompt: string, attempt: number, lastIssue?: string) {
+function buildPrompt(attempt: number, lastIssue?: string): string {
   const escalation =
     attempt === 0
       ? ""
-      : `\n\nPREVIOUS ATTEMPT FAILED VERIFICATION: ${lastIssue}\nThis time you MUST move items to dramatically different positions and you MUST NOT introduce any object that wasn't in the original photo. Be bolder with the rearrangement.`;
+      : `\n\nPREVIOUS ATTEMPT FAILED: ${lastIssue}\nThis time you MUST move items to dramatically different positions. Be bolder with the rearrangement.`;
 
-  return `You are an expert interior organizer. FULLY REGENERATE this exact room as a brand new photorealistic image where the SAME items have been physically MOVED to NEW positions, in a ${stylePrompt} aesthetic.
+  return `You are an expert space organizer and declutterer. FULLY REGENERATE this exact room as a brand new photorealistic image where the SAME items have been physically MOVED to NEW positions to create a clean, organized, and functional layout.
 
-THIS IS A REARRANGEMENT TASK — THE OUTPUT MUST LOOK VISIBLY DIFFERENT FROM THE INPUT.
+THIS IS A REORGANIZATION TASK — THE OUTPUT MUST LOOK VISIBLY DIFFERENT FROM THE INPUT.
 
 ABSOLUTE RULES (do not violate any):
-1. DO NOT return the input image. DO NOT return a near-identical copy. Items MUST be in noticeably different physical positions than the original.
-2. DO NOT add ANY new objects: no new furniture, no new decor, no new plants, no new rugs, no new art, no new pillows, no new towels, no new blankets, no new books, NOTHING that wasn't already visible in the original photo. Adding items is a complete failure of the task.
+1. DO NOT return the input image. Items MUST be in noticeably different physical positions than the original.
+2. DO NOT add ANY new objects: no new furniture, no new decor, no new plants, no new rugs, no new storage bins, NOTHING that wasn't already visible in the original photo.
 3. DO NOT remove existing furniture or belongings. You MAY remove only: trash, loose papers, wrappers, dirty laundry on the floor, and visible dust/dirt.
 4. Keep the SAME room shell: same walls, paint, windows, doors, flooring, ceiling, built-in lighting fixtures, and the SAME camera angle / perspective / focal length.
-5. Every visible object from the original must still appear in the output — just MOVED, rotated, stacked, folded, straightened, grouped, or repositioned to feel intentional and styled in the chosen vibe.
+5. Every visible object from the original must still appear in the output — just MOVED, rotated, stacked, folded, straightened, grouped, or repositioned to feel intentional and organized.
 6. Preserve each object's identity: same colors, materials, patterns, and approximate size.
+7. The goal is ORGANIZATION: items should be neatly arranged, grouped by function, surfaces should be clear where possible, and the space should feel functional and tidy.
 
 Before outputting, mentally check: "Have I actually moved items to new locations? Did I avoid inventing anything new?" If not, redo it.${escalation}
 
@@ -76,15 +62,17 @@ async function generateImage(apiKey: string, prompt: string, image: string): Pro
   return data?.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
 }
 
-type Verdict = { ok: boolean; reason: string; tooSimilar: boolean; newItems: boolean };
-
 type AddedItem = {
   name: string;
   evidence: string;
   confidence: "high" | "medium" | "low";
 };
 
-type StrictVerdict = Verdict & {
+type Verdict = {
+  ok: boolean;
+  reason: string;
+  tooSimilar: boolean;
+  newItems: boolean;
   addedItems: AddedItem[];
   verificationFailed?: boolean;
 };
@@ -100,24 +88,23 @@ function normalizeAddedItems(value: unknown): AddedItem[] {
     .filter((item) => item.name.length > 0);
 }
 
-async function verifyResult(apiKey: string, before: string, after: string): Promise<StrictVerdict> {
-  const verifierPrompt = `You are a strict image-diff QA auditor for a room-rearrangement AI. Compare the two photos:
+async function verifyResult(apiKey: string, before: string, after: string): Promise<Verdict> {
+  const verifierPrompt = `You are a strict image-diff QA auditor for a room-reorganization AI. Compare the two photos:
 - BEFORE: the user's original room.
-- AFTER: the AI's rearranged version.
+- AFTER: the AI's reorganized version.
 
 Two failure conditions:
-A) "too_similar" — items are in essentially the same positions; the AFTER looks like the BEFORE with only trivial changes (e.g. only lighting/cleanup, no actual rearrangement).
+A) "too_similar" — items are in essentially the same positions; the AFTER looks like the BEFORE with only trivial changes.
 B) "new_items" — the AFTER contains any tangible object that was NOT visible in the BEFORE.
 
-For "new_items", run an object-presence diff, not a style critique:
-- Flag added furniture, decor, textiles, towels, blankets, pillows, books, plants, rugs, lamps, baskets, art, electronics, containers, storage bins, and stacks/piles of objects.
-- Flag a newly visible object even if it is common in rooms or would match the requested style.
-- Do NOT flag objects that clearly existed in BEFORE but were moved, rotated, folded, stacked, straightened, or partially occluded.
-- Do NOT flag lighting changes, shadows, camera exposure, cleaner surfaces, removed trash, or reduced clutter.
+For "new_items", run an object-presence diff:
+- Flag added furniture, decor, textiles, storage bins, containers, and any other tangible objects.
+- Do NOT flag objects that clearly existed in BEFORE but were moved, rotated, folded, stacked, or straightened.
+- Do NOT flag lighting changes, shadows, cleaner surfaces, removed trash, or reduced clutter.
 - If uncertain, only mark confidence "low" and do not set "new_items" true unless at least one added item has medium or high confidence.
 
 Respond with ONLY a compact JSON object, no prose, no markdown:
-{"too_similar": boolean, "new_items": boolean, "added_items": [{"name": "<object>", "evidence": "<why it was not in BEFORE>", "confidence": "high|medium|low"}], "reason": "<one short sentence>"}`;
+{"too_similar": boolean, "new_items": boolean, "added_items": [{"name": "<object>", "evidence": "<why>", "confidence": "high|medium|low"}], "reason": "<one short sentence>"}`;
 
   const res = await fetch(AI_URL, {
     method: "POST",
@@ -144,26 +131,28 @@ Respond with ONLY a compact JSON object, no prose, no markdown:
     console.warn("verifier failed", res.status, await res.text());
     return {
       ok: false,
-      reason: "Verifier unavailable; refusing to return an unchecked image.",
+      reason: "Verifier unavailable",
       tooSimilar: false,
       newItems: false,
       addedItems: [],
       verificationFailed: true,
     };
   }
+
   const data = await res.json();
   const raw: string = data?.choices?.[0]?.message?.content ?? "";
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) {
     return {
       ok: false,
-      reason: "Verifier did not return a readable verdict; refusing to return an unchecked image.",
+      reason: "Verifier did not return a readable verdict",
       tooSimilar: false,
       newItems: false,
       addedItems: [],
       verificationFailed: true,
     };
   }
+
   try {
     const parsed = JSON.parse(match[0]);
     const tooSimilar = !!parsed.too_similar;
@@ -180,7 +169,7 @@ Respond with ONLY a compact JSON object, no prose, no markdown:
   } catch {
     return {
       ok: false,
-      reason: "Verifier verdict could not be parsed; refusing to return an unchecked image.",
+      reason: "Verifier verdict could not be parsed",
       tooSimilar: false,
       newItems: false,
       addedItems: [],
@@ -189,21 +178,20 @@ Respond with ONLY a compact JSON object, no prose, no markdown:
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    const { image, style } = await req.json();
-    if (!image || !style) {
-      return new Response(JSON.stringify({ error: "Missing image or style" }), {
+    const { image } = await req.json();
+    if (!image) {
+      return new Response(JSON.stringify({ error: "Missing image" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const stylePrompt = STYLE_PROMPTS[style] ?? STYLE_PROMPTS.minimalist;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
@@ -213,11 +201,11 @@ Deno.serve(async (req) => {
     }
 
     let lastImage: string | null = null;
-    let lastVerdict: StrictVerdict | null = null;
+    let lastVerdict: Verdict | null = null;
     let lastIssue: string | undefined;
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const prompt = buildPrompt(stylePrompt, attempt, lastIssue);
+      const prompt = buildPrompt(attempt, lastIssue);
       let generated: string | null = null;
       try {
         generated = await generateImage(LOVABLE_API_KEY, prompt, image);
@@ -230,9 +218,7 @@ Deno.serve(async (req) => {
         }
         if (e?.status === 402) {
           return new Response(
-            JSON.stringify({
-              error: "AI credits exhausted. Please add credits in Settings → Workspace → Usage.",
-            }),
+            JSON.stringify({ error: "AI credits exhausted." }),
             { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -252,7 +238,7 @@ Deno.serve(async (req) => {
 
       if (verdict.ok) {
         return new Response(
-          JSON.stringify({ image: generated, attempts: attempt + 1, verdict }),
+          JSON.stringify({ image: generated, attempts: attempt + 1 }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -261,17 +247,14 @@ Deno.serve(async (req) => {
       if (verdict.tooSimilar) issues.push("the AFTER looked too similar to the BEFORE");
       if (verdict.newItems) {
         const added = verdict.addedItems.map((item) => item.name).join(", ");
-        issues.push(`the AFTER introduced items that weren't in the original${added ? ` (${added})` : ""}`);
+        issues.push(`the AFTER introduced items not in the original${added ? ` (${added})` : ""}`);
       }
-      lastIssue = `${issues.join(" and ")}. Auditor note: ${verdict.reason}`;
+      lastIssue = `${issues.join(" and ")}. ${verdict.reason}`;
     }
 
     if (lastVerdict?.verificationFailed) {
       return new Response(
-        JSON.stringify({
-          error: "We couldn't verify that the image used only your original items. Please try again.",
-          verdict: lastVerdict,
-        }),
+        JSON.stringify({ error: "We couldn't verify the rearrangement. Please try again." }),
         { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -281,23 +264,19 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           error: added
-            ? `The generated image added items not found in your photo: ${added}. Please try again with a clearer photo.`
-            : "The generated image added items not found in your photo. Please try again with a clearer photo.",
-          verdict: lastVerdict,
+            ? `The generated image added items not in your photo: ${added}. Please try again.`
+            : "The generated image added items not in your photo. Please try again.",
         }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (lastImage) {
-      // All retries failed verification; return best effort with a flag.
       return new Response(
         JSON.stringify({
           image: lastImage,
           attempts: MAX_ATTEMPTS,
-          verdict: lastVerdict,
-          warning:
-            "We tried a few times but the rearrangement may still look similar to your original. Try a different style or photo.",
+          warning: "The rearrangement may still look similar to your original. Try a different photo.",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -308,7 +287,7 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
-    console.error("reorganize-room error:", e);
+    console.error("rearrange-space error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
