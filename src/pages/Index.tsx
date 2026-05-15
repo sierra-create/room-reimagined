@@ -119,6 +119,7 @@ const Index = () => {
     setAnalysis(null);
     setRearrangedImage(null);
     setProducts(null);
+    setError(null);
 
     try {
       const result = await analyzeSpace(img);
@@ -126,14 +127,15 @@ const Index = () => {
       setStep("results");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Please try again.";
-      toast({ title: "Analysis failed", description: msg });
-      setStep("upload");
+      setError({ context: "analyze", message: friendlyError(msg) });
+      setStep("error");
     }
   }, []);
 
   const runRearrange = useCallback(async () => {
     if (!image) return;
     setLoadingRearrange(true);
+    setError(null);
     try {
       const result = await rearrangeSpace(image);
       setRearrangedImage(result.image);
@@ -142,7 +144,8 @@ const Index = () => {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Please try again.";
-      toast({ title: "Rearrangement failed", description: msg });
+      setError({ context: "rearrange", message: friendlyError(msg) });
+      setStep("error");
     } finally {
       setLoadingRearrange(false);
     }
