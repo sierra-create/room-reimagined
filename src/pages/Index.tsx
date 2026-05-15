@@ -13,9 +13,31 @@ import {
   type ProductSuggestion,
 } from "@/lib/generateRoom";
 import { toast } from "@/hooks/use-toast";
-import { Camera, Sparkles, ArrowLeft, Download, RotateCcw, LayoutGrid, ShoppingBag, ChartBar as BarChart3, Loader as Loader2 } from "lucide-react";
+import { Camera, Sparkles, ArrowLeft, Download, RotateCcw, LayoutGrid, ShoppingBag, ChartBar as BarChart3, Loader as Loader2, CircleAlert as AlertCircle } from "lucide-react";
 
-type Step = "landing" | "upload" | "analyzing" | "results";
+type Step = "landing" | "upload" | "analyzing" | "results" | "error";
+type ErrorContext = "analyze" | "rearrange";
+type AppError = { context: ErrorContext; message: string };
+
+function friendlyError(raw: string): string {
+  const m = (raw || "").toLowerCase();
+  if (m.includes("payload") || m.includes("too large") || m.includes("body size") || m.includes("413")) {
+    return "Your photo is too large to send. Try a smaller or lower-resolution image.";
+  }
+  if (m.includes("rate limit") || m.includes("429")) {
+    return "We're being rate-limited right now. Please wait a moment and try again.";
+  }
+  if (m.includes("credits")) {
+    return "AI credits have run out. Please try again later.";
+  }
+  if (m.includes("failed to fetch") || m.includes("network")) {
+    return "Couldn't reach the server. Check your connection and try again.";
+  }
+  if (m.includes("timeout") || m.includes("timed out")) {
+    return "The request took too long. Please try again.";
+  }
+  return raw || "Something went wrong. Please try again.";
+}
 
 const Header = () => (
   <header className="w-full px-6 py-4 flex items-center gap-2.5">
