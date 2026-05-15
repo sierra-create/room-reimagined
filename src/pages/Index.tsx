@@ -57,6 +57,7 @@ const Index = () => {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingRearrange, setLoadingRearrange] = useState(false);
   const [activeTab, setActiveTab] = useState("analysis");
+  const [error, setError] = useState<AppError | null>(null);
 
   const processFile = async (file: File): Promise<string> => {
     let working: Blob = file;
