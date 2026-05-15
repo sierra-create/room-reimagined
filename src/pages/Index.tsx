@@ -36,17 +36,58 @@ const Index = () => {
   const [loadingRearrange, setLoadingRearrange] = useState(false);
   const [activeTab, setActiveTab] = useState("analysis");
 
+  const processFile = async (file: File): Promise<string> => {
+    let working: Blob = file;
+    const isHeic =
+      /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
+
+    if (isHeic) {
+      const heic2any = (await import("heic2any")).default;
+      const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.85 });
+      working = Array.isArray(converted) ? converted[0] : converted;
+    }
+
+    // Downscale + re-encode as JPEG to keep edge-function payload small
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Could not read file"));
+      reader.readAsDataURL(working);
+    });
+
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Could not decode image"));
+      el.src = dataUrl;
+    });
+
+    const MAX = 1600;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable");
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: { "image/*": [] },
+    accept: { "image/*": [".heic", ".heif"] },
     multiple: false,
-    onDrop: (files) => {
+    onDrop: async (files) => {
       const file = files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const processed = await processFile(file);
+        setImage(processed);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Unsupported image format.";
+        toast({ title: "Couldn't read that photo", description: msg });
+      }
     },
   });
 
