@@ -192,61 +192,166 @@ const Index = () => {
     if (!rearrangedImage) return;
     const a = document.createElement("a");
     a.href = rearrangedImage;
-    a.download = "spacesort-rearranged.png";
+    a.download = "roomie-rearranged.png";
     a.click();
   };
 
   return (
     <main className="min-h-screen flex flex-col">
-      <Header />
+      <Header onHome={reset} />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
+      <div className={`flex-1 flex flex-col ${step === "landing" ? "" : "items-center justify-center"} px-6 pb-12`}>
         {/* LANDING */}
         {step === "landing" && (
-          <section className="max-w-xl w-full text-center space-y-8 animate-in fade-in duration-500">
-            <span className="inline-block text-xs font-semibold uppercase tracking-[0.2em] text-primary bg-primary-soft px-4 py-1.5 rounded-full">
-              AI Space Organizer
-            </span>
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
-              Messy space? <span className="text-primary">Snap a pic</span>, see it organized.
-            </h1>
-            <p className="text-muted-foreground text-lg leading-relaxed">
-              Take a photo of any cluttered room, closet, or corner. AI analyzes the mess, shows you a
-              rearranged version, and links to products that would help.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="w-full animate-in fade-in duration-500">
+            <section className="max-w-4xl mx-auto text-center pt-10 pb-32">
+              <div className="inline-block mb-8 px-6 py-2 border-2 border-accent/40 rounded-full eyebrow text-accent">
+                Spatial Intelligence Reimagined
+              </div>
+              <h1 className="text-5xl md:text-7xl font-extrabold leading-[1.05] mb-8">
+                Messy space? <br />
+                <span className="text-primary">Snap a photo</span>, <br />
+                see it organized.
+              </h1>
+              <p className="max-w-xl mx-auto text-lg md:text-xl text-muted-foreground mb-12 font-medium leading-relaxed">
+                Upload a photo of any cluttered room. Roomie analyzes the mess, generates a reimagined
+                layout, and suggests the perfect products.
+              </p>
               <Button
                 size="lg"
-                className="rounded-full px-8 h-14 text-base gap-2"
+                className="mx-auto rounded-full h-16 px-12 gap-3 bg-accent text-accent-foreground hover:bg-foreground text-sm font-bold uppercase tracking-widest shadow-soft"
                 onClick={() => setStep("upload")}
               >
-                <Camera className="w-5 h-5" />
-                Get Started
+                <Upload className="w-5 h-5" />
+                Start Transformation
               </Button>
+            </section>
+
+            <div className="space-y-32 md:space-y-44">
+              {/* 01 ANALYZE */}
+              <section className="max-w-7xl mx-auto grid md:grid-cols-2 gap-14 md:gap-20 items-center">
+                <div className="order-2 md:order-1">
+                  <div className="eyebrow text-primary mb-4">Step One</div>
+                  <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
+                    Analyze the clutter
+                  </h2>
+                  <p className="text-lg font-medium leading-relaxed mb-8 text-muted-foreground">
+                    Roomie scans your room to identify every object, understanding the hidden
+                    architectural potential beneath the daily chaos.
+                  </p>
+                  <div className="p-6 bg-primary-soft/60 border-l-4 border-primary-soft font-semibold text-sm leading-relaxed">
+                    "Spatial recognition that actually understands how you live."
+                  </div>
+                </div>
+                <div className="order-1 md:order-2">
+                  <div className="relative">
+                    <div className="absolute -top-10 -right-10 w-64 h-64 bg-accent/15 rounded-full blur-3xl -z-10" />
+                    <img
+                      src={landMessy}
+                      alt="A cluttered living room with clothes and books on the floor"
+                      width={800}
+                      height={1000}
+                      className="w-full aspect-[4/5] object-cover rounded-lg shadow-soft"
+                    />
+                    <div className="absolute bottom-8 -left-4 md:-left-8 bg-foreground text-background p-5 eyebrow shadow-card">
+                      Processing scan… 98%
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* 02 REARRANGE */}
+              <section className="max-w-7xl mx-auto grid md:grid-cols-2 gap-14 md:gap-20 items-center">
+                <div className="relative">
+                  <img
+                    src={landOrganized}
+                    alt="The same living room reorganized in a calm, minimal layout"
+                    width={800}
+                    height={1000}
+                    loading="lazy"
+                    className="w-full aspect-[4/5] object-cover rounded-lg shadow-soft"
+                  />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-background/50 rounded-full backdrop-blur-md flex items-center justify-center p-6">
+                    <span className="text-background eyebrow text-center leading-tight">
+                      AI Optimized Layout
+                    </span>
+                  </div>
+                </div>
+                <div className="md:pl-12">
+                  <div className="eyebrow text-primary mb-4">Step Two</div>
+                  <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
+                    Rearrange with AI
+                  </h2>
+                  <p className="text-lg font-medium leading-relaxed mb-10 text-muted-foreground">
+                    See your space transformed in seconds — your own things, reorganized for flow,
+                    balance, and calm.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <span className="px-5 py-2.5 bg-foreground text-background eyebrow">Minimalist</span>
+                    <span className="px-5 py-2.5 border-2 border-border eyebrow">Industrial</span>
+                    <span className="px-5 py-2.5 border-2 border-border eyebrow">Earth Tones</span>
+                  </div>
+                </div>
+              </section>
+
+              {/* 03 SHOP */}
+              <section className="max-w-7xl mx-auto grid md:grid-cols-2 gap-14 md:gap-20 items-center">
+                <div className="order-2 md:order-1">
+                  <div className="eyebrow text-primary mb-4">Step Three</div>
+                  <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
+                    Shop the curation
+                  </h2>
+                  <p className="text-lg font-medium leading-relaxed mb-10 text-muted-foreground">
+                    Found a piece you love in the render? Roomie hands you a curated shopping list of
+                    everything that would finish the space.
+                  </p>
+                  <button
+                    onClick={() => setStep("upload")}
+                    className="border-b-4 border-primary text-primary pb-1 font-black uppercase tracking-[0.2em] text-xs hover:text-accent hover:border-accent transition-colors"
+                  >
+                    View Curated Collection
+                  </button>
+                </div>
+                <div className="order-1 md:order-2">
+                  <div className="grid grid-cols-2 gap-6">
+                    {[
+                      { src: prodVase, alt: "Minimalist ceramic vase on a wooden shelf" },
+                      { src: prodChair, alt: "Modern beige linen armchair" },
+                      { src: prodRug, alt: "Close-up of a woven jute rug" },
+                      { src: prodTable, alt: "Sleek oak coffee table" },
+                    ].map((p, i) => (
+                      <img
+                        key={p.alt}
+                        src={p.src}
+                        alt={p.alt}
+                        width={512}
+                        height={512}
+                        loading="lazy"
+                        className={`w-full aspect-square object-cover rounded-lg shadow-card ${
+                          i % 2 === 1 ? "translate-y-8" : ""
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </section>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-4 max-w-sm mx-auto">
-              <div className="text-center space-y-1">
-                <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center mx-auto">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                </div>
-                <p className="text-xs font-medium">Analyze</p>
-              </div>
-              <div className="text-center space-y-1">
-                <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center mx-auto">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <p className="text-xs font-medium">Rearrange</p>
-              </div>
-              <div className="text-center space-y-1">
-                <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center mx-auto">
-                  <ShoppingBag className="w-5 h-5 text-primary" />
-                </div>
-                <p className="text-xs font-medium">Shop</p>
-              </div>
-            </div>
-          </section>
+            <footer className="max-w-7xl mx-auto mt-40 md:mt-56 pb-16 border-t-2 border-border pt-20 text-center">
+              <h2 className="text-3xl md:text-5xl font-extrabold mb-10">
+                Ready to breathe new life into your room?
+              </h2>
+              <Button
+                size="lg"
+                className="mx-auto rounded-full h-14 px-12 font-bold uppercase tracking-widest text-xs shadow-soft"
+                onClick={() => setStep("upload")}
+              >
+                Upload your first photo
+              </Button>
+            </footer>
+          </div>
         )}
+
 
         {/* UPLOAD */}
         {step === "upload" && (
