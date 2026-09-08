@@ -39,14 +39,22 @@ function friendlyError(raw: string): string {
   return raw || "Something went wrong. Please try again.";
 }
 
-const Header = () => (
-  <header className="w-full px-6 py-4 flex items-center gap-2.5">
-    <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-      <LayoutGrid className="w-5 h-5 text-primary-foreground" />
+const Header = ({ onHome }: { onHome?: () => void }) => (
+  <header className="w-full max-w-7xl mx-auto px-6 py-8 flex items-center justify-between">
+    <button onClick={onHome} className="flex items-center gap-3">
+      <div className="w-10 h-10 rounded-sm rotate-3 bg-primary flex items-center justify-center shadow-card">
+        <House className="w-5 h-5 text-primary-foreground" />
+      </div>
+      <span className="font-bold text-3xl tracking-tighter text-primary">Roomie</span>
+    </button>
+    <div className="hidden md:flex gap-10 eyebrow text-muted-foreground">
+      <span>Analyze</span>
+      <span>Rearrange</span>
+      <span>Shop</span>
     </div>
-    <span className="font-bold text-lg tracking-tight">SpaceSort</span>
   </header>
 );
+
 
 const Index = () => {
   const [step, setStep] = useState<Step>("landing");
