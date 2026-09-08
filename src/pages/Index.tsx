@@ -271,9 +271,10 @@ const Index = () => {
                     loading="lazy"
                     className="w-full aspect-[4/5] object-cover rounded-lg shadow-soft"
                   />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-background/50 rounded-full backdrop-blur-md flex items-center justify-center p-6">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-background/60 rounded-full bg-foreground/60 backdrop-blur-md flex items-center justify-center p-6">
                     <span className="text-background eyebrow text-center leading-tight">
                       AI Optimized Layout
+
                     </span>
                   </div>
                 </div>
