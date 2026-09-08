@@ -13,7 +13,14 @@ import {
   type ProductSuggestion,
 } from "@/lib/generateRoom";
 import { toast } from "@/hooks/use-toast";
-import { Camera, Sparkles, ArrowLeft, Download, RotateCcw, LayoutGrid, ShoppingBag, ChartBar as BarChart3, Loader as Loader2, CircleAlert as AlertCircle } from "lucide-react";
+import { Camera, Sparkles, ArrowLeft, Download, RotateCcw, House, ShoppingBag, ChartBar as BarChart3, Loader as Loader2, CircleAlert as AlertCircle, Upload } from "lucide-react";
+import landMessy from "@/assets/land-messy.jpg";
+import landOrganized from "@/assets/land-organized.jpg";
+import prodVase from "@/assets/prod-vase.jpg";
+import prodChair from "@/assets/prod-chair.jpg";
+import prodRug from "@/assets/prod-rug.jpg";
+import prodTable from "@/assets/prod-table.jpg";
+
 
 type Step = "landing" | "upload" | "analyzing" | "results" | "error";
 type ErrorContext = "analyze" | "rearrange";
