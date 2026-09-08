@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,50 +6,50 @@
 
 @layer base {
   :root {
-    /* SpaceSort clean-organizer palette */
-    --background: 210 20% 98%;          /* cool white */
-    --foreground: 215 25% 15%;          /* deep navy */
+    /* Roomie — Earth Canvas: warm cream, terracotta, sage */
+    --background: 40 50% 97%;           /* #fcf9f4 warm cream */
+    --foreground: 106 23% 33%;          /* #4a6741 deep green */
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 106 23% 33%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 106 23% 33%;
 
-    --primary: 175 55% 38%;             /* teal */
-    --primary-foreground: 0 0% 100%;
-    --primary-soft: 175 40% 93%;
+    --primary: 13 51% 53%;              /* #c4654a terracotta */
+    --primary-foreground: 40 50% 97%;
+    --primary-soft: 24 70% 93%;         /* soft peach */
 
-    --secondary: 210 20% 95%;           /* cool gray */
-    --secondary-foreground: 215 25% 15%;
+    --secondary: 40 35% 93%;
+    --secondary-foreground: 106 23% 33%;
 
-    --muted: 210 15% 95%;
-    --muted-foreground: 215 10% 45%;
+    --muted: 40 30% 93%;
+    --muted-foreground: 106 12% 42%;
 
-    --accent: 38 90% 55%;               /* amber accent */
-    --accent-foreground: 215 25% 15%;
+    --accent: 101 22% 56%;              /* #87a878 sage */
+    --accent-foreground: 40 50% 97%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 15% 90%;
-    --input: 210 15% 90%;
-    --ring: 175 55% 38%;
+    --border: 106 15% 87%;
+    --input: 106 15% 87%;
+    --ring: 13 51% 53%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --shadow-soft: 0 8px 30px -12px hsl(175 55% 38% / 0.15);
-    --shadow-card: 0 4px 20px -8px hsl(215 25% 15% / 0.07);
-    --gradient-warm: linear-gradient(135deg, hsl(210 20% 98%) 0%, hsl(175 40% 96%) 100%);
+    --shadow-soft: 0 18px 40px -18px hsl(101 22% 40% / 0.3);
+    --shadow-card: 0 10px 30px -12px hsl(106 23% 25% / 0.14);
+    --gradient-warm: linear-gradient(180deg, hsl(40 50% 97%) 0%, hsl(38 45% 95%) 100%);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 40 50% 97%;
+    --sidebar-foreground: 106 23% 33%;
+    --sidebar-primary: 13 51% 53%;
+    --sidebar-primary-foreground: 40 50% 97%;
+    --sidebar-accent: 40 35% 93%;
+    --sidebar-accent-foreground: 106 23% 33%;
+    --sidebar-border: 106 15% 87%;
+    --sidebar-ring: 13 51% 53%;
   }
 }
 
@@ -58,14 +58,17 @@
   html, body, #root { height: 100%; }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Montserrat', system-ui, sans-serif;
     background-image: var(--gradient-warm);
     background-attachment: fixed;
   }
+  h1, h2, h3 { letter-spacing: -0.03em; }
 }
 
 @layer utilities {
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-card { box-shadow: var(--shadow-card); }
   .bg-gradient-warm { background-image: var(--gradient-warm); }
+  .eyebrow { @apply text-[10px] font-black uppercase tracking-[0.3em]; }
 }
+
